@@ -9,7 +9,8 @@ app.use(cors())
 app.use(express.json())
 //engedélyezni egy temp könyvtárat:
 app.use(fileUpload({
-    useTempFiles: true
+    useTempFiles: true,
+    tempFileDir:'/tmp'
 }))
 
 app.use('/auth',router)

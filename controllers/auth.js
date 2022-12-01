@@ -1,7 +1,8 @@
 import mysql from "mysql";
 import bcrypt from "bcryptjs";
 import { configDB } from "../configDB.js";
-import { upload } from "../cloudinary.js";
+import { upload,removeFromCloud } from "../cloudinary.js";
+import fs from 'fs'
 
 const db=mysql.createConnection(configDB)
 //ideiglenes login:
@@ -20,15 +21,18 @@ const db=mysql.createConnection(configDB)
 export const login=(request,response)=>{
     console.log(request.body)
     const {username,password} = request.body
-    db.query('SELECT id,password FROM `users` where username=?',[username],(err,result)=>{
+    db.query('SELECT id,password,email,avatar,avatar_id FROM `users` where username=?',[username],(err,result)=>{
         if(err)
             console.log('HIBA!',err)
         else{
             bcrypt.compare(password, result[0].password,(err,resultCompare)=>{
                 if(err)
-                    response.send({error:"Wrong password!"})
+                    response.send({error:"ServerERROR!",err})
+                if(resultCompare){
+                    response.send({username:username,id:result[0].id,email:result[0].email,avatar:result[0].avatar,avatar_id:result[0].avatar_id})
+                }
                 else{
-                    response.send({username:username,userId:result[0].id})
+                    response.send({error:"Wrong password username pair!"})
                 }
             })
         }
@@ -78,16 +82,17 @@ export const register=(request,response)=>{
 }
 
 export const updateAvatar=async (request,response)=>{
-    const {username}=request.body
+    const {username,avatar_id}=request.body
     if(request.files){
         const {selFile} = request.files
+        console.log("Selected: ",selFile)
         const cloudFile = await upload(selFile.tempFilePath)
-        db.query('update users set avatar=?,avatar_id? where username=?',[cloudFile.url,cloudFile.public_id,username],(err,result)=>{
+        db.query('update users set avatar=?,avatar_id=? where username=?',[cloudFile.url,cloudFile.public_id,username],(err,result)=>{
             if(err){
-                console.log('HIBA!')
+                console.log('HIBA!',err)
             }
             else{
-                response.send({msg:"Sikeres módosítás",avatar:cloudFile.url})
+                response.send({msg:"Sikeres módosítás",avatar:cloudFile.url,avatar_id:cloudFile.public_id})
             }
         })
     }
