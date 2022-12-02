@@ -10,7 +10,7 @@ app.use(express.json())
 //engedélyezni egy temp könyvtárat:
 app.use(fileUpload({
     useTempFiles: true,
-    tempFileDir:'/tmp'
+    /*tempFileDir:'/tmp'*/
 }))
 
 app.use('/auth',router)

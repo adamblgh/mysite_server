@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { configDB } from "../configDB.js";
 import { upload,removeFromCloud } from "../cloudinary.js";
 import fs from 'fs'
+import path from "path";
 
 const db=mysql.createConnection(configDB)
 //ideiglenes login:
@@ -50,6 +51,7 @@ export const checkEmail=(request,response)=>{
     })
 }
 
+
 export const checkUsername=(request,response)=>{
     console.log(request.body)
     const {username} = request.body
@@ -90,10 +92,35 @@ export const updateAvatar=async (request,response)=>{
         db.query('update users set avatar=?,avatar_id=? where username=?',[cloudFile.url,cloudFile.public_id,username],(err,result)=>{
             if(err){
                 console.log('HIBA!',err)
+                response.send({msg:"Hiba: ",err})
             }
             else{
+                removeFromCloud(avatar_id)
+                removeTMPfiles(selFile.tempFilePath)
                 response.send({msg:"Sikeres módosítás",avatar:cloudFile.url,avatar_id:cloudFile.public_id})
             }
         })
     }
+}
+
+const removeTMPfiles = path =>{
+    console.log("A törlendő temp file útvonala: ",path)
+    fs.unlink(path, err =>{
+        if(err) throw err
+    })
+}
+
+export const deleteUser=(request,response)=>{
+    console.log(request.body)
+    const {username,avatar_id} = request.body
+    db.query('DELETE FROM `users` where username=?',[username],(err,result)=>{
+        if(err)
+            console.log('HIBA!',err)
+        else{
+            console.log("Törlés eredménye: ",result)
+            avatar_id && removeFromCloud(avatar_id)
+            response.send({msg:"Sikeresen törölte a felhasználóját!",username:username})
+        }
+            
+    })
 }
