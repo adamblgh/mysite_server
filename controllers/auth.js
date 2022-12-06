@@ -124,3 +124,21 @@ export const deleteUser=(request,response)=>{
             
     })
 }
+
+export const changePassword=(request,response)=>{
+    const {password,username} = request.body
+    bcrypt.hash(password,saltRound,(err,hashedPassword)=>{
+        if(err){
+            console.log('BCRYPT HIBA!',err)
+        }
+        else{
+            db.query('update users SET password=? where username=?;',[hashedPassword,username],(err,result)=>{
+                if(err){
+                    response.send({msg:'Password not changed!'})
+                }
+                else
+                    response.send({msg:'Successful changed password!'})
+            })
+        }
+    })
+}
